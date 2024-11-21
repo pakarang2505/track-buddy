@@ -1,5 +1,8 @@
-const db = require('../../config/db');
 const bcrypt = require('bcryptjs');
+
+// Configuration for roles and center distribution ID
+const CENTER_DIST_ID = 1;
+const VALID_ROLES = ['Staff', 'Courier', 'Admin'];
 
 // Get profile data
 exports.getProfile = async (req, res) => {
@@ -7,19 +10,19 @@ exports.getProfile = async (req, res) => {
     const staffId = req.user.id; // Extracted from the JWT token via `protect` middleware
 
     // Fetch the staff profile
-    const [staff] = await db.promise().query(
+    const [staff] = await req.db.query(
       'SELECT staff_id, staff_fname, staff_lname, staff_role, dist_id FROM Staff WHERE staff_id = ?',
       [staffId]
     );
 
-    //If no record is found, it means the staff_id is invalid
+    // If no record is found, it means the staff_id is invalid
     if (!staff.length) {
       return res.status(404).json({ error: 'Staff member not found' });
     }
 
     res.status(200).json({ profile: staff[0] });
   } catch (error) {
-    console.error('Get Profile Error:', error);
+    console.error('Get Profile Error:', { message: error.message, stack: error.stack });
     res.status(500).json({ error: 'Error fetching profile' });
   }
 };
@@ -30,25 +33,17 @@ exports.editProfile = async (req, res) => {
     const { firstName, lastName, role, distId, password } = req.body;
     const staffId = req.user.id; // Extracted from the JWT token via `protect` middleware
 
-    // Validate role
-    const validRoles = ['Staff', 'Courier', 'Admin'];
-    if (role && !validRoles.includes(role)) {
+    // Validate role if provided
+    if (role && !VALID_ROLES.includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
-    // If role is Admin, ensure distId corresponds to "Center"
-    const CENTER_DIST_ID = 5;
-
-if (role === 'Admin' && distId !== CENTER_DIST_ID) {
-    return res.status(400).json({
-      error: 'Admin role requires work office to be "Center"',
-    });
-}
-if (role === 'Admin') {
-    distId = 5; // Override to "Center"
-}
-
-
+    // Validate distId for Admin role
+    if (role === 'Admin' && distId !== CENTER_DIST_ID) {
+      return res.status(400).json({
+        error: 'Admin role requires work office to be "Center"',
+      });
+    }
 
     // Hash the password if the user provides a new password
     let hashedPassword = null;
@@ -73,7 +68,7 @@ if (role === 'Admin') {
     }
     if (distId) {
       updates.push('dist_id = ?');
-      queryParams.push(distId);
+      queryParams.push(role === 'Admin' ? CENTER_DIST_ID : distId); // Ensure distId for Admin
     }
     if (hashedPassword) {
       updates.push('staff_password = ?');
@@ -81,8 +76,7 @@ if (role === 'Admin') {
     }
     queryParams.push(staffId); // Add staff ID for the WHERE clause
 
-    
-    //checks whether the user provided any fields to update
+    // Check if there are fields to update
     if (!updates.length) {
       return res.status(400).json({ error: 'No fields to update' });
     }
@@ -90,11 +84,11 @@ if (role === 'Admin') {
     const query = `UPDATE Staff SET ${updates.join(', ')} WHERE staff_id = ?`;
 
     // Execute the query
-    await db.promise().query(query, queryParams);
+    await req.db.query(query, queryParams);
 
     res.status(200).json({ message: 'Profile updated successfully' });
   } catch (error) {
-    console.error('Edit Profile Error:', error);
+    console.error('Edit Profile Error:', { message: error.message, stack: error.stack });
     res.status(500).json({ error: 'Error updating profile' });
   }
 };

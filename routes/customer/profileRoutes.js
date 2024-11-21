@@ -1,11 +1,16 @@
 const express = require('express');
 const profileController = require('../../controllers/customer/profileController');
+const { protect } = require('../../middleware/authMiddleware');
+
 const router = express.Router();
 
-// Route to get profile details
+// Apply the `protect` middleware to secure all routes
+router.use(protect);
+
+//Fetch profile details for the logged-in sender
 router.get('/', profileController.getProfile);
 
-// Route to update profile details
+//Update profile details for the logged-in sender
 router.put('/', profileController.updateProfile);
 
 module.exports = router;

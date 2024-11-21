@@ -4,19 +4,26 @@ const { protect } = require('../../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Route to get parcel counts by date
-router.get('/counts', protect, reportController.getParcelCountsByDate);
+// Apply middleware to protect all routes
+router.use(protect);
 
-// Route to get parcels by status and date
-router.get('/parcels', protect, reportController.getParcelsByStatusAndDate);
+//Get parcel counts by date
+//counts?date=2024-11-21
+router.get('/counts', reportController.getParcelCountsByDate);
 
-// Route to get all unsuccessful parcels
-router.get('/unsuccessful', protect, reportController.getUnsuccessfulParcels);
+//Get parcels filtered by status and date
+//parcels?date=2024-11-21&status=Unsuccessful
+//parcels?date=2024-11-21&status=Delivered
+router.get('/parcels', reportController.getParcelsByStatusAndDate);
 
-// Route to update tracking status
-router.put('/update-status', protect, reportController.updateTrackingStatus);
+//Get all unsuccessful parcels
+router.get('/unsuccessful', reportController.getUnsuccessfulParcels);
 
-// Route to get all distributions for dropdown with optional search
-router.get('/distributions', protect, reportController.getAllDistributions);
+//Update the tracking status of a parcel
+router.put('/update-status', reportController.updateTrackingStatus);
+
+//Get all distributions for dropdown with optional search
+//distributions?search=thai
+router.get('/distributions', reportController.getAllDistributions);
 
 module.exports = router;

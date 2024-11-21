@@ -4,7 +4,7 @@ const { protect } = require('../../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Route for creating a shipment
+//Create a new shipment
 router.post('/create', protect, shipmentController.createShipment);
 
 module.exports = router;

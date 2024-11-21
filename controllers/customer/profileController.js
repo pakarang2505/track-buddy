@@ -4,13 +4,13 @@ const bcrypt = require('bcryptjs');
 // Fetch profile details for the logged-in sender
 exports.getProfile = async (req, res) => {
   try {
-    const senderId = req.user.id; // Assuming `sender_id` is available from authenticated session or token
+    const senderId = req.user.id;
 
     // Fetch the profile from the database
-    const profile = await ProfileModel.getProfile(senderId);
+    const profile = await ProfileModel.getProfile(req.db, senderId);
 
     if (!profile) {
-      return res.status(404).json({ error: "Profile not found" });
+      return res.status(404).json({ error: 'Profile not found' });
     }
 
     res.status(200).json({
@@ -20,15 +20,15 @@ exports.getProfile = async (req, res) => {
       phone: profile.sender_phone,
     });
   } catch (error) {
-    console.error("Error fetching profile:", error.message);
-    res.status(500).json({ error: "Error fetching profile" });
+    console.error('Error fetching profile:', { message: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Error fetching profile' });
   }
 };
 
 // Update profile details for the logged-in sender
 exports.updateProfile = async (req, res) => {
   try {
-    const senderId = req.user.id; // The ID of the currently logged-in sender
+    const senderId = req.user.id;
     const { firstName, lastName, phone, password } = req.body;
 
     // Prepare the fields to be updated
@@ -43,19 +43,19 @@ exports.updateProfile = async (req, res) => {
 
     // Check if there are any updates to be made
     if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: "No fields to update" });
+      return res.status(400).json({ error: 'No fields to update' });
     }
 
     // Update the profile in the database
-    const updateResult = await ProfileModel.updateProfile(senderId, updates);
+    const updateResult = await ProfileModel.updateProfile(req.db, senderId, updates);
 
     if (updateResult.affectedRows === 0) {
-      return res.status(404).json({ error: "Profile not found" });
+      return res.status(404).json({ error: 'Profile not found' });
     }
 
-    res.status(200).json({ message: "Profile updated successfully" });
+    res.status(200).json({ message: 'Profile updated successfully' });
   } catch (error) {
-    console.error("Error updating profile:", error.message);
-    res.status(500).json({ error: "Error updating profile" });
+    console.error('Error updating profile:', { message: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Error updating profile' });
   }
 };
